@@ -15,9 +15,13 @@
         -o-transform: scaleX(-1);
         -webkit-transform: scaleX(-1);
         transform: scaleX(-1);
+        border:1px solid #000000;
+        display: none;
         ">
       </video>
-      <canvas id="output" width="300" height="300" style="border:1px solid #000000;"></canvas>
+      <canvas hidden id="output" width="300" height="300" style="border:1px solid #000000;"></canvas>
+      <canvas hidden id="output2" width="300" height="300" style="border:1px solid #000000;"></canvas>
+      <img id="output3" width="640" height="480" src="" style="border:1px solid #000000;">
     </div>
   </body>
   <script src="bundle.js"></script>
