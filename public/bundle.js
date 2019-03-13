@@ -144,6 +144,7 @@ let poseDetection = async (socket, poseNet, classifier) => {
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__draw__["b" /* drawSkeleton */])(poseCtx, poses);
 
     await $("#poseData").attr("src", poseViewCanvas.toDataURL("image/jpeg"));
+
     classifier.classify(poseDataImg, (err,res) => {
       if (err) {
         console.error(err);
@@ -151,7 +152,7 @@ let poseDetection = async (socket, poseNet, classifier) => {
       else {
         console.log(res);
       }
-    })
+    });
 
     requestAnimationFrame(detectionLoop);
   }
@@ -170,7 +171,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 
-let socket = io("localhost:3500");
+let socket = io("https://ml-serversite.herokuapp.com");
 
 let config = {
  imageScaleFactor: 0.5,
