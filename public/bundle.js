@@ -143,6 +143,16 @@ let poseDetection = async (socket, poseNet, classifier) => {
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__draw__["a" /* drawKeypoints */])(poseCtx, poses);
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__draw__["b" /* drawSkeleton */])(poseCtx, poses);
 
+    await $("#poseData").attr("src", poseViewCanvas.toDataURL("image/jpeg"));
+    classifier.classify(poseDataImg, (err,res) => {
+      if (err) {
+        console.error(err);
+      }
+      else {
+        console.log(res);
+      }
+    })
+
     requestAnimationFrame(detectionLoop);
   }
   detectionLoop();

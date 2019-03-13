@@ -31,6 +31,17 @@ export let poseDetection = async (socket, poseNet, classifier) => {
     drawKeypoints(poseCtx, poses);
     drawSkeleton(poseCtx, poses);
 
+    await $("#poseData").attr("src", poseViewCanvas.toDataURL("image/jpeg"));
+
+    classifier.classify(poseDataImg, (err,res) => {
+      if (err) {
+        console.error(err);
+      }
+      else {
+        console.log(res);
+      }
+    });
+
     requestAnimationFrame(detectionLoop);
   }
   detectionLoop();

@@ -1,7 +1,7 @@
 import {loadVideo, openStream} from './loadVideo'
 import {poseDetection} from './poseDetection'
 
-let socket = io("localhost:3500");
+let socket = io("https://ml-serversite.herokuapp.com");
 
 let config = {
  imageScaleFactor: 0.5,
