@@ -12,7 +12,7 @@ io.on('connection', socket => {
   console.log("hello " + socket.id);
   socket.on("image", imgData => {
     io.emit("imgData", imgData);
-  })
+  });
 });
+
 app.get('/', (req,res) => res.render('home.ejs'));
-app.get('/hehe', (req,res) => res.render('hehe.ejs'));

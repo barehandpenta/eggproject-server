@@ -14,7 +14,7 @@ export let poseDetection = async (socket, poseNet, classifier) => {
   poseNet.on('pose', result => {
     poses = result;
   });
-  socket.on("imageData", imageData => {
+  socket.on("imgData", imageData => {
     img = imageData;
   });
 
