@@ -126,7 +126,7 @@ let poseDetection = async (socket, poseNet, classifier) => {
   poseNet.on('pose', result => {
     poses = result;
   });
-  socket.on("image", imageData => {
+  socket.on("imageData", imageData => {
     img = imageData;
   });
 
