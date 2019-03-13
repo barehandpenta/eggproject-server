@@ -67,7 +67,43 @@
 /******/ })
 /************************************************************************/
 /******/ ([
-/* 0 */,
+/* 0 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* unused harmony export openStream */
+/* unused harmony export loadVideo */
+let setupCamera = async (videoWidth, videoHeight, videoID, stream) => {
+  let video = document.getElementById(videoID);
+  video.width = videoWidth;
+  video.height = videoHeight;
+  video.srcObject = stream;
+  return new Promise((resolve) => {
+    video.onloadedmetadata = () => {
+      resolve(video);
+    };
+  });
+}
+
+let openStream = () => {
+  let config = {
+    'audio': false,
+    'video': {
+      facingMode: 'user',
+      width: 640,
+      height: 480,
+    },
+  }
+  return navigator.mediaDevices.getUserMedia(config);
+}
+let loadVideo = async (videoWidth, videoHeight, videoID, stream) => {
+  let video = await setupCamera(videoWidth, videoHeight, videoID, stream);
+  video.play();
+  return video;
+}
+
+
+/***/ }),
 /* 1 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -75,69 +111,41 @@
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__draw__ = __webpack_require__(3);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return poseDetection; });
 
+
 let poses = [];
 let result;
-let poseDetection = (video, poseNet, classifier) => {
+let img;
 
-  const videoWidth = video.width;
-  const videoHeight = video.height;
+let poseDetection = async (socket, poseNet, classifier) => {
+  let videoViewCanvas = document.getElementById("videoView");
+  let poseViewCanvas = document.getElementById("poseView");
+  let poseDataImg = document.getElementById("poseData");
 
-  const canvas = document.getElementById('output');
-  const ctx = canvas.getContext('2d');
-  canvas.width = videoWidth
-  canvas.height = videoHeight
+  let poseCtx = poseViewCanvas.getContext("2d");
 
-  const canvas2 = document.getElementById('output2');
-  const ctx2 = canvas2.getContext('2d');
-  canvas2.width = videoWidth
-  canvas2.height = videoHeight
-
-  let img = document.getElementById('output3');
-
-  let imgData = canvas2.toDataURL("image/png");
-  $("#output3").attr("src", imgData);
-
-  poseNet.on('pose', results => {
-    poses = results;
+  poseNet.on('pose', result => {
+    poses = result;
+  });
+  socket.on("image", imageData => {
+    img = imageData;
   });
 
+  let detectionLoop = async () => {
 
+    await $("#videoView").attr("src", img);
+    poseNet.singlePose(videoViewCanvas);
 
-  let poseDetectionFrame = async () => {
+    poseCtx.clearRect(0, 0, 300, 300);
+    poseCtx.save();
+    poseCtx.scale(-1, 1);
+    poseCtx.restore();
 
-    // ctx.clearRect(0, 0, videoWidth, videoHeight);
-    // ctx.save();
-    // ctx.scale(-1, 1);
-    // ctx.translate(-videoWidth, 0);
-    // ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
-    // ctx.restore();
-    //
-    // drawKeypoints(ctx, poses);
-    // drawSkeleton(ctx, poses);
+    __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__draw__["a" /* drawKeypoints */])(poseCtx, poses);
+    __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__draw__["b" /* drawSkeleton */])(poseCtx, poses);
 
-    ctx2.clearRect(0, 0, videoWidth, videoHeight);
-    ctx2.save();
-    ctx2.scale(-1, 1);
-    ctx2.restore();
-
-    __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__draw__["a" /* drawKeypoints */])(ctx2, poses);
-    __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__draw__["b" /* drawSkeleton */])(ctx2, poses);
-
-    classifier.classify(img, (err,res) => {
-      if (err) {
-        console.log(err);
-      }
-      else {
-        result = res;;
-      }
-    })
-    __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__draw__["c" /* drawLabel */])(result, ctx2);
-    let imgData = canvas2.toDataURL("image/png");
-    $("#output3").attr("src", imgData);
-
-    requestAnimationFrame(poseDetectionFrame);
+    requestAnimationFrame(detectionLoop);
   }
-  poseDetectionFrame();
+  detectionLoop();
 }
 
 
@@ -147,17 +155,17 @@ let poseDetection = (video, poseNet, classifier) => {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__loadVideo__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__loadVideo__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__poseDetection__ = __webpack_require__(1);
 
 
-let video, stream;
-let peer = new Peer({key: 'lwjd5qra8257b9'});
+
+let socket = io("localhost:3500");
 
 let config = {
  imageScaleFactor: 0.5,
  outputStride: 16,
- flipHorizontal: true,
+ flipHorizontal: false,
  minConfidence: 0.1,
  minPartConfidence: 0.5,
  scoreThreshold: 0.5,
@@ -166,35 +174,18 @@ let config = {
 }
 
 let loadpage = async () => {
-  let serverStream = await __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__loadVideo__["a" /* openStream */])();
-  peer.on('open', id => {
-    console.log(id);
-    $("#serverID").append(id);
-  });
-  peer.on("call", async (call) => {
-    call.answer(serverStream);
-    call.on("stream", async (clientStream) => {
-      console.log(clientStream);
-      video = await __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__loadVideo__["b" /* loadVideo */])(640,480,"video",clientStream);
-      let poseNet = await ml5.poseNet(video, config);
-      console.log("PoseNet is loaded");
-      let mobilenet = await ml5.featureExtractor("MobileNet");
-      console.log("MobileNet is loaded");
-      let classifier = await mobilenet.classification();
-      await classifier.load('model.json');
-      console.log("Custom model loaded");
-      __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_1__poseDetection__["a" /* poseDetection */])(video, poseNet, classifier);
-    });
-  });
+  let videoViewCanvas = document.getElementById("videoView")
+  let poseNet = await ml5.poseNet(config);
+  console.log("PoseNet is loaded");
+  let mobilenet = await ml5.featureExtractor("MobileNet");
+  console.log("MobileNet is loaded");
+  let classifier = await mobilenet.classification();
+  await classifier.load('model.json');
+  console.log("Custom model loaded");
+  __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_1__poseDetection__["a" /* poseDetection */])(socket, poseNet, classifier);
 }
-loadpage();
 
-$(document).ready(() => {
-  $("#call").click(() => {
-    let id = $("#peerId").val();
-    let call = peer.call(id, stream)
-  });
-});
+loadpage();
 
 navigator.getUserMedia = navigator.getUserMedia ||
     navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -207,7 +198,7 @@ navigator.getUserMedia = navigator.getUserMedia ||
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return drawKeypoints; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return drawSkeleton; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "c", function() { return drawLabel; });
+/* unused harmony export drawLabel */
 let color = 'red';
 let lineWidth = 2;
 let r = 5;
@@ -252,44 +243,6 @@ let drawSkeleton = (ctx, poses) => {
 let drawLabel = (text, ctx) => {
   ctx.font = "30px Arial";
   ctx.fillText(text, 50, 50);
-}
-
-
-/***/ }),
-/* 4 */,
-/* 5 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return openStream; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return loadVideo; });
-let setupCamera = async (videoWidth, videoHeight, videoID, stream) => {
-  let video = document.getElementById(videoID);
-  video.width = videoWidth;
-  video.height = videoHeight;
-  video.srcObject = stream;
-  return new Promise((resolve) => {
-    video.onloadedmetadata = () => {
-      resolve(video);
-    };
-  });
-}
-
-let openStream = () => {
-  let config = {
-    'audio': false,
-    'video': {
-      facingMode: 'user',
-      width: 640,
-      height: 480,
-    },
-  }
-  return navigator.mediaDevices.getUserMedia(config);
-}
-let loadVideo = async (videoWidth, videoHeight, videoID, stream) => {
-  let video = await setupCamera(videoWidth, videoHeight, videoID, stream);
-  video.play();
-  return video;
 }
 
 

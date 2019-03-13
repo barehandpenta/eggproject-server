@@ -1,65 +1,37 @@
 import {drawKeypoints, drawSkeleton, drawLabel} from './draw'
+
 let poses = [];
 let result;
-export let poseDetection = (video, poseNet, classifier) => {
+let img;
 
-  const videoWidth = video.width;
-  const videoHeight = video.height;
+export let poseDetection = async (socket, poseNet, classifier) => {
+  let videoViewCanvas = document.getElementById("videoView");
+  let poseViewCanvas = document.getElementById("poseView");
+  let poseDataImg = document.getElementById("poseData");
 
-  const canvas = document.getElementById('output');
-  const ctx = canvas.getContext('2d');
-  canvas.width = videoWidth
-  canvas.height = videoHeight
+  let poseCtx = poseViewCanvas.getContext("2d");
 
-  const canvas2 = document.getElementById('output2');
-  const ctx2 = canvas2.getContext('2d');
-  canvas2.width = videoWidth
-  canvas2.height = videoHeight
-
-  let img = document.getElementById('output3');
-
-  let imgData = canvas2.toDataURL("image/png");
-  $("#output3").attr("src", imgData);
-
-  poseNet.on('pose', results => {
-    poses = results;
+  poseNet.on('pose', result => {
+    poses = result;
+  });
+  socket.on("image", imageData => {
+    img = imageData;
   });
 
+  let detectionLoop = async () => {
 
+    await $("#videoView").attr("src", img);
+    poseNet.singlePose(videoViewCanvas);
 
-  let poseDetectionFrame = async () => {
+    poseCtx.clearRect(0, 0, 300, 300);
+    poseCtx.save();
+    poseCtx.scale(-1, 1);
+    poseCtx.restore();
 
-    // ctx.clearRect(0, 0, videoWidth, videoHeight);
-    // ctx.save();
-    // ctx.scale(-1, 1);
-    // ctx.translate(-videoWidth, 0);
-    // ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
-    // ctx.restore();
-    //
-    // drawKeypoints(ctx, poses);
-    // drawSkeleton(ctx, poses);
+    drawKeypoints(poseCtx, poses);
+    drawSkeleton(poseCtx, poses);
 
-    ctx2.clearRect(0, 0, videoWidth, videoHeight);
-    ctx2.save();
-    ctx2.scale(-1, 1);
-    ctx2.restore();
-
-    drawKeypoints(ctx2, poses);
-    drawSkeleton(ctx2, poses);
-
-    classifier.classify(img, (err,res) => {
-      if (err) {
-        console.log(err);
-      }
-      else {
-        result = res;;
-      }
-    })
-    drawLabel(result, ctx2);
-    let imgData = canvas2.toDataURL("image/png");
-    $("#output3").attr("src", imgData);
-
-    requestAnimationFrame(poseDetectionFrame);
+    requestAnimationFrame(detectionLoop);
   }
-  poseDetectionFrame();
+  detectionLoop();
 }
