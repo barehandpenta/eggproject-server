@@ -1,3 +1,7 @@
+/*
+  Drawing out keypoints and connection between those keypoints (skeleton)
+*/
+
 let color = 'red';
 let lineWidth = 2;
 let r = 5;
